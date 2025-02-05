@@ -1,116 +1,130 @@
-import bcrypt from 'bcrypt';
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import postgres from 'postgres';
-import { users, courses, enrollments, progressRecords } from '../lib/placeholder-data';
+import { v4 as uuidv4 } from 'uuid';
+import { users, courses, enrollments, progressRecords } from '@/app/lib/placeholder-data';
+
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
-async function seedUsers() {
-  await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
-  await sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      role VARCHAR(50) NOT NULL,
-      createdAt TIMESTAMP NOT NULL
-    );
-  `;
+export async function POST() {
+  try {
+    console.log('🚀 Starting database seeding...');
 
-  const insertedUsers = await Promise.all(
-    users.map(async (user) => {
+    
+    await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`;
+
+    
+    console.log('🔹 Creating tables...');
+    
+    await sql`CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL,
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`;
+    
+    await sql`CREATE TABLE IF NOT EXISTS courses (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      instrument TEXT NOT NULL,
+      teacherId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      level TEXT NOT NULL,
+      schedule TEXT NOT NULL,
+      capacity INT NOT NULL
+    );`;
+    
+    await sql`CREATE TABLE IF NOT EXISTS enrollments (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      studentId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      courseId UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      enrollmentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      status TEXT NOT NULL
+    );`;
+    
+    await sql`CREATE TABLE IF NOT EXISTS progress (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      studentId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      courseId UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+      date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      evaluation TEXT NOT NULL,
+      comments TEXT NOT NULL
+    );`;
+
+    console.log('Tables created successfully.');
+
+    
+    for (const user of users) {
+      console.log(`🔹 Seeding user: ${user.email}`);
+
       const hashedPassword = await bcrypt.hash(user.password, 10);
-      return sql`
+
+      await sql`
         INSERT INTO users (id, name, email, password, role, createdAt)
         VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword}, ${user.role}, ${user.createdAt})
+        ON CONFLICT (id) DO NOTHING;
       `;
-    })
-  );
+    }
+    console.log('Users seeded successfully.');
 
-  return insertedUsers;
-}
+    
+    for (const course of courses) {
+      console.log(`🔹 Seeding course: ${course.title}`);
 
-async function seedCourses() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS courses (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      title VARCHAR(255) NOT NULL,
-      description TEXT NOT NULL,
-      instrument VARCHAR(50) NOT NULL,
-      teacherId UUID REFERENCES users(id),
-      level VARCHAR(50) NOT NULL,
-      schedule VARCHAR(255) NOT NULL,
-      capacity INT NOT NULL
-    );
-  `;
+      const [teacherExists] = await sql`SELECT id FROM users WHERE id = ${course.teacherId} LIMIT 1`;
 
-  const insertedCourses = await Promise.all(
-    courses.map((course) => {
-      return sql`
+      if (!teacherExists) {
+        console.warn(`Skipping course "${course.title}" because teacher with ID "${course.teacherId}" does not exist.`);
+        continue;
+      }
+
+      await sql`
         INSERT INTO courses (id, title, description, instrument, teacherId, level, schedule, capacity)
         VALUES (${course.id}, ${course.title}, ${course.description}, ${course.instrument}, ${course.teacherId}, ${course.level}, ${course.schedule}, ${course.capacity})
+        ON CONFLICT (id) DO NOTHING;
       `;
-    })
-  );
+    }
+    console.log('Courses seeded successfully.');
 
-  return insertedCourses;
-}
+    
+    for (const enrollment of enrollments) {
+      console.log(`🔹 Seeding enrollment: ${enrollment.studentId} -> ${enrollment.courseId}`);
 
-async function seedEnrollments() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS enrollments (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      studentId UUID REFERENCES users(id),
-      courseId UUID REFERENCES courses(id),
-      enrollmentDate TIMESTAMP NOT NULL,
-      status VARCHAR(50) NOT NULL
-    );
-  `;
-
-  const insertedEnrollments = await Promise.all(
-    enrollments.map((enrollment) => {
-      return sql`
+      await sql`
         INSERT INTO enrollments (id, studentId, courseId, enrollmentDate, status)
-        VALUES (${enrollment.id}, ${enrollment.studentId}, ${enrollment.courseId}, ${enrollment.enrollmentDate}, ${enrollment.status})
+        VALUES (${uuidv4()}, ${enrollment.studentId}, ${enrollment.courseId}, ${enrollment.enrollmentDate}, ${enrollment.status})
+        ON CONFLICT (id) DO NOTHING;
       `;
-    })
-  );
+    }
+    console.log('Enrollments seeded successfully.');
 
-  return insertedEnrollments;
-}
+    
+    for (const progress of progressRecords) {
+      console.log(`🔹 Seeding progress for student: ${progress.studentId}`);
 
-async function seedProgress() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS progress (
-      id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      studentId UUID REFERENCES users(id),
-      courseId UUID REFERENCES courses(id),
-      date TIMESTAMP NOT NULL,
-      evaluation TEXT NOT NULL,
-      comments TEXT
-    );
-  `;
-
-  const insertedProgress = await Promise.all(
-    progressRecords.map((record) => {
-      return sql`
+      await sql`
         INSERT INTO progress (id, studentId, courseId, date, evaluation, comments)
-        VALUES (${record.id}, ${record.studentId}, ${record.courseId}, ${record.date}, ${record.evaluation}, ${record.comments})
+        VALUES (${uuidv4()}, ${progress.studentId}, ${progress.courseId}, ${progress.date}, ${progress.evaluation}, ${progress.comments})
+        ON CONFLICT (id) DO NOTHING;
       `;
-    })
-  );
+    }
+   
 
-  return insertedProgress;
+    console.log('Database seeding completed successfully.');
+    return NextResponse.json({ message: 'Database seeded successfully' });
+
+  } catch (error: unknown) {
+    console.error('Error seeding database:', error);
+
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message, stack: error.stack }, { status: 500 });
+    }
+
+    return NextResponse.json({ error: 'Unknown error', stack: null }, { status: 500 });
+  } finally {
+    await sql.end();
+  }
 }
-
-async function seedDatabase() {
-  await seedUsers();
-  await seedCourses();
-  await seedEnrollments();
-  await seedProgress();
-}
-
-seedDatabase().catch((err) => {
-  console.error('Error seeding database:', err);
-  process.exit(1);
-});
