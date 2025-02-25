@@ -1,65 +1,50 @@
-import { v4 as uuidv4 } from 'uuid';
-import { User, Course, Enrollment, Progress } from './definitions';
+// This file contains placeholder data that you'll be replacing with real data in the Data Fetching chapter:
 
-export const users: User[] = [
+import { title } from "process";
+
+// https://nextjs.org/learn/dashboard-app/fetching-data
+const users = [
   {
-    id: uuidv4(), 
-    email: 'lee@robinson.com',
-    password: 'password123',
-    name: 'Lee Robinson',
-    role: 'teacher',
-    createdAt: new Date('2022-01-01'),
-  },
-  {
-    id: uuidv4(),
-    email: 'michael@novotny.com',
-    password: 'password123',
-    name: 'Michael Novotny',
-    role: 'student',
-    createdAt: new Date('2022-02-01'),
+    id: '410544b2-4001-4271-9855-fec4b6a6442a',
+    name: 'User',
+    email: 'user@nextmail.com',
+    password: '123456',
+    role: 'ADMIN',
   },
 ];
 
-export const courses: Course[] = [
+const courses = [
   {
-    id: uuidv4(), 
-    title: 'Guitar Basics',
-    description: 'Learn the basics of playing guitar.',
-    instrument: 'Guitar',
-    teacherId: users[0].id, 
-    level: 'Beginner',
-    schedule: 'Monday 10:00 - 11:00',
-    capacity: 10,
-  },
-  {
-    id: uuidv4(),
-    title: 'Advanced Piano',
-    description: 'Advanced techniques for piano players.',
+    id: 'd6e15727-9fe1-4961-8c5b-ea44a9bd81aa',
+    title: 'Course',
+    description: 'Course Description',
     instrument: 'Piano',
-    teacherId: users[1].id,
-    level: 'Advanced',
-    schedule: 'Wednesday 14:00 - 15:00',
-    capacity: 5,
+    teacherId: '410544b2-4001-4271-9855-fec4b6a6442a',
+    level: 'Beginner',
+    schedule: 'Monday 10:00 AM',
+    capacity: 10,
+  }
+];
+
+const enrollments = [
+  {
+    id: 'd6e15727-9fe1-4961-8c8c-ea44a9bd81aa',
+    studentId: '410544b2-4001-4271-9855-fec4b6a6442a',
+    courseId: 'd6e15727-9fe1-4961-8c5b-ea44a9bd81aa',
+    enrollmentDate: '2021-10-01',
+    status: 'ENROLLED',
   },
 ];
 
-export const enrollments: Enrollment[] = [
+const progress = [
   {
-    id: uuidv4(),
-    studentId: users[1].id,
-    courseId: courses[0].id,
-    enrollmentDate: new Date('2022-05-01'),
-    status: 'active',
+    id: 'd6e15727-9fe1-4961-5b5b-ea44a9bd81aa',
+    studentId: '410544b2-4001-4271-9855-fec4b6a6442a',
+    courseId: 'd6e15727-9fe1-4961-8c5b-ea44a9bd81aa',
+    date: '2021-10-01',
+    evaluation: 'A',
+    comment: 'Good job!',
   },
 ];
 
-export const progressRecords: Progress[] = [
-  {
-    id: uuidv4(),
-    studentId: users[1].id,
-    courseId: courses[0].id,
-    date: new Date('2022-05-15'),
-    evaluation: 'Good progress',
-    comments: 'Keep practicing the chords.',
-  },
-];
+export { users, courses, enrollments, progress };
