@@ -1,29 +1,30 @@
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import Image from 'next/image';
-
-
 
 export default function Page() {
   return (
-    <main className="flex min-h-screen flex-col p-6">
-
-      <div className="mt-4 flex grow flex-col gap-4 md:flex-row">
-        <div className="flex flex-col justify-center gap-6 rounded-lg bg-gray-50 px-6 py-10 md:w-2/5 md:px-20">
-          <p className={`text-xl text-gray-800 md:text-3xl md:leading-normal`}>
-            <strong>Bienvenue</strong> jeune musicien.{' '}
-            Connecte toi pour prendre un cours.
-          </p>
+    <main className="flex min-h-screen flex-col items-center justify-center ">
+      <div className="flex flex-col md:flex-row items-center max-w-5xl w-full gap-10 p-6 md:p-12 rounded-2xl bg-white bg-opacity-75 shadow-xl backdrop-blur-lg">
+        
+        {/* Section Texte */}
+        <div className="flex flex-col gap-6 text-center md:text-left md:w-2/5"> 
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800">
+            🎶 Bienvenue sur Musilearn ! 🎵
+          </h1>
+          <p className="text-lg text-gray-700">
+            Connecte-toi pour découvrir des cours inspirants et améliorer tes talents musicaux.
+          </p> 
           <Link
             href="/login"
-            className="flex items-center gap-5 self-start rounded-lg bg-blue-500 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 md:text-base"
+            className="flex items-center justify-center md:justify-start gap-3 rounded-lg bg-blue-600 px-6 py-3 text-lg font-semibold text-white transition-all duration-300 hover:bg-blue-700 shadow-md"
           >
-            <span>Log in</span> <ArrowRightIcon className="w-5 md:w-6" />
+            <span>Se connecter</span> 
+            <ArrowRightIcon className="w-6" /> 
           </Link>
         </div>
-        <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
-          {/* Add Hero Images Here */}
-        </div>
+
+       
+
       </div>
     </main>
   );

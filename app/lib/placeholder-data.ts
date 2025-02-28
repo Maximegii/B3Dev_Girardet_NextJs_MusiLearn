@@ -6,33 +6,47 @@ import { title } from "process";
 const users = [
   {
     id: '410544b2-4001-4271-9855-fec4b6a6442a',
-    name: 'User',
-    email: 'user@nextmail.com',
+    name: 'Administrateur',
+    email: 'admin@musilearn.com',
     password: '123456',
     role: 'ADMIN',
+  },
+  {
+    id: '410544b2-4001-4271-9855-fec4b6a6442b',
+    name: 'Teacher',
+    email: 'teacher@musilearn.com',
+    password: '123456',
+    role: 'TEACHER',
+  },
+  {
+    id: '410544b2-4001-4271-9855-fec4b6a6442c',
+    name: 'Student',
+    email: 'student@musilearn.com',
+    password: '123456',
+    role: 'STUDENT',
   },
 ];
 
 const courses = [
   {
     id: 'd6e15727-9fe1-4961-8c5b-ea44a9bd81aa',
-    title: 'Course',
-    description: 'Course Description',
-    instrument: 'Piano',
-    teacherId: '410544b2-4001-4271-9855-fec4b6a6442a',
-    level: 'Beginner',
-    schedule: 'Monday 10:00 AM',
-    capacity: 10,
+    title: 'Cours de Guitare',
+    description: 'Cours de Guitare pour débutant',
+    instrument: 'Guitare',
+    teacherId: '410544b2-4001-4271-9855-fec4b6a6442b',
+    level: 'Débutants',
+    schedule: 'Lundi 10H',
+    capacity: 3,
   }
 ];
 
 const enrollments = [
   {
     id: 'd6e15727-9fe1-4961-8c8c-ea44a9bd81aa',
-    studentId: '410544b2-4001-4271-9855-fec4b6a6442a',
+    studentId: '410544b2-4001-4271-9855-fec4b6a6442c',
     courseId: 'd6e15727-9fe1-4961-8c5b-ea44a9bd81aa',
-    enrollmentDate: '2021-10-01',
-    status: 'ENROLLED',
+    enrollmentDate: '2025-02-24',
+    status: 'inscrit',
   },
 ];
 
@@ -41,9 +55,9 @@ const progress = [
     id: 'd6e15727-9fe1-4961-5b5b-ea44a9bd81aa',
     studentId: '410544b2-4001-4271-9855-fec4b6a6442a',
     courseId: 'd6e15727-9fe1-4961-8c5b-ea44a9bd81aa',
-    date: '2021-10-01',
+    date: '2025-02-22',
     evaluation: 'A',
-    comment: 'Good job!',
+    comment: 'Mouais pas mal',
   },
 ];
 

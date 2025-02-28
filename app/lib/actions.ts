@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 import postgres from "postgres";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
+import { Course } from './definitions';
+
 
 export async function authenticate(
     prevState: string | undefined,
@@ -57,8 +59,7 @@ export interface StateCourse {
 }
 
 
-export async function createCourse(prevState: StateCourse, formData: FormData) {
-
+export async function createCourse(prevState: StateCourse, formData: FormData): Promise<StateCourse> {
     const validatedFields = CreateCourse.safeParse({
         title: formData.get('title'),
         description: formData.get('description'),
@@ -66,7 +67,7 @@ export async function createCourse(prevState: StateCourse, formData: FormData) {
         teacherId: formData.get('teacherId'),
         level: formData.get('level'),
         schedule: formData.get('schedule'),
-        capacity: formData.get('capacity'),
+        capacity: Number(formData.get('capacity')),
     });
     if (!validatedFields.success) {
         return {
@@ -85,6 +86,7 @@ export async function createCourse(prevState: StateCourse, formData: FormData) {
     } catch (error) {
         return {
             message: 'Database Error: Failed to Create Courses',
+            errors: {}
         }
     }
     revalidatePath('/dashboard/cours');
@@ -106,20 +108,18 @@ const CreateUser = FormSchemaUser.omit({ id: true });
 
 
 export type StateUser = {
-    errors?: {
-        id?: string;
-        title?: string;
-        description?: string;
-        instrument?: string;
-        teacherId?: string;
-        level?: string;
-        schedule?: string;
-        capacity?: number;
-    };
     message?: string | null;
+    errors: {
+        id?: string[];
+        name?: string[];
+        description?: string[];
+        email?: string[];
+        password?: string[];
+        role?: string[];
+    };
 }
 
-export async function createUser(prevState: StateUser, formData: FormData) {
+export async function createUser(prevState: StateUser, formData: FormData): Promise<StateUser> {
 
     const validatedFields = CreateUser.safeParse({
         name: formData.get('name'),
@@ -130,7 +130,7 @@ export async function createUser(prevState: StateUser, formData: FormData) {
     if (!validatedFields.success) {
         return {
             errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Missing Fields. Fields to Create Invoice.',
+            message: 'Missing Fields. Fields to Create User.',
         };
 
     }
@@ -145,49 +145,138 @@ export async function createUser(prevState: StateUser, formData: FormData) {
     } catch (error) {
         return {
             message: 'Database Error: Failed to Create Users',
+            errors: {}
         }
     }
     revalidatePath('/dashboard');
     redirect('/dashboard');
 }
 
+export async function fetchCourseById(courseId: string) {
+    try {
+        const course = await sql`
+            SELECT * FROM courses WHERE id = ${courseId}
+        `;
+        return course[0];
+    } catch (error) {
+        console.error('Failed to fetch course:', error);
+        return null;
+    }
+}
+const UpdateCourse = FormSchemaCourse.omit({ id: true });
 
-// const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+export async function updateCourse(id: string, prevState: StateCourse, formData: FormData): Promise<StateCourse> {
 
-// export async function updateInvoice(id: string, prevState: State, formData: FormData) {
-//     const validatedFields = UpdateInvoice.safeParse({
-//         customerId: formData.get('customerId'),
-//         amount: formData.get('amount'),
-//         status: formData.get('status'),
-//     });
+    const validatedFields = UpdateCourse.safeParse({
+        title: formData.get('title'),
+        description: formData.get('description'),
+        instrument: formData.get('instrument'),
+        teacherId: formData.get('teacherId'),
+        level: formData.get('level'),
+        schedule: formData.get('schedule'),
+        capacity: Number(formData.get('capacity')),
+    });
 
-//     if (!validatedFields.success) {
-//         return {
-//             errors: validatedFields.error.flatten().fieldErrors,
-//             message: 'Missing Fields. Failed to Update Invoice.',
-//         };
-//     }
-//     const { customerId, amount, status } = validatedFields.data;
-//     const amountInCents = amount * 100;
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Missing Fields. Failed to Update courses.',
+        };
+    }
+    const { title, description, instrument, teacherId, level, schedule, capacity } = validatedFields.data;
+    
+    try {
+        await sql`
+        UPDATE courses
+        SET title = ${title}, description = ${description}, instrument = ${instrument}, teacherId = ${teacherId}, level = ${level}, schedule = ${schedule}, capacity = ${capacity}
+        WHERE id = ${id}
+    `;
+    }
+    catch (error) {
+        return { 
+            message: 'Database Error: Failed to Update Course.',
+            errors: {}
+         };
+    }
+    revalidatePath('/dashboard/teacher');
+    redirect('/dashboard/teacher');
+}
 
-//     try {
-//         await sql`
-//         UPDATE invoices
-//         SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-//         WHERE id = ${id}
-//     `;
-//     }
-//     catch (error) {
-//         return { message: 'Database Error: Failed to Update Invoice.' };
-//     }
-//     revalidatePath('/dashboard/invoices');
-//     redirect('/dashboard/invoices');
-// }
+export async function deleteCourse(courseId: string) {
+    try {
+        await sql`
+            DELETE FROM courses WHERE id = ${courseId}
+        `;
+        revalidatePath('/dashboard/teacher');
+        redirect('/dashboard/teacher');
+        return {
+            message: 'Course deleted successfully',
+        };
+    } catch (error) {
+        return {
+            message: 'Database Error: Failed to Delete Course',
+        };
+    }
+}
 
-// export async function deleteInvoice(id: string) {
-//     await sql`
-//         DELETE FROM invoices
-//         WHERE id = ${id}
-//     `;
-//     revalidatePath('/dashboard/invoices');
-// }
+
+export async function fetchEnrolledCourses(userId: string): Promise<Course[]>  {
+
+    
+    try {
+         const courses = await sql`
+            SELECT courses.id, courses.title, courses.description, courses.instrument, courses.level, courses.schedule, courses.teacherId, courses.capacity 
+            FROM enrollments
+            JOIN courses ON enrollments.courseid = courses.id::uuid
+            WHERE enrollments.studentid = ${userId}::uuid
+        `;
+
+        return courses.map((course: any) => ({
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            instrument: course.instrument,
+            level: course.level,
+            schedule: course.schedule,
+            teacherId: course.teacherId,
+            capacity: course.capacity,
+        }));
+    } catch (error) {
+        console.error('Failed to fetch enrolled courses:', error);
+        return [];
+    }
+}
+
+export async function addProgress(courseId: string, userId: string, evaluation: string, comment: string, date: string) {
+    
+    try {
+        await sql`
+            INSERT INTO progress (courseid, studentid, evaluation, comment, date)
+            VALUES (${courseId}::uuid, ${userId}::uuid, ${evaluation}, ${comment}, ${date})
+        `;
+        return {
+            message: 'Progression added successfully',
+        };
+    } catch (error) {
+       
+            console.error('Failed to fetch enrolled courses:', error);
+        return {
+            message: 'Database Error: Failed to Delete Course',
+        };
+        
+    }
+}
+
+export async function fetchProgress(courseId: string, userId: string) {
+    try {
+        const progress = await sql`
+            SELECT evaluation, comment, date
+            FROM progress
+            WHERE courseid = ${courseId}::uuid AND studentid = ${userId}::uuid
+        `;
+        return progress[0];
+    } catch (error) {
+        console.error('Failed to fetch progress:', error);
+        return null;
+    }
+}

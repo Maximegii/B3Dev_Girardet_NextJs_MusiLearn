@@ -65,8 +65,8 @@ async function seedEnrollments() {
   await sql`
     CREATE TABLE IF NOT EXISTS enrollments (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      studentId VARCHAR(255) NOT NULL,
-      courseId VARCHAR(255) NOT NULL,
+      studentId UUID NOT NULL,
+      courseId UUID NOT NULL,
       enrollmentDate DATE NOT NULL,
       status VARCHAR(255) NOT NULL
     );
@@ -89,8 +89,8 @@ async function seedProgress() {
   await sql`
     CREATE TABLE IF NOT EXISTS progress (
       id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-      studentId VARCHAR(255) NOT NULL,
-      courseId VARCHAR(255) NOT NULL,
+      studentId UUID NOT NULL,
+      courseId UUID NOT NULL,
       date DATE NOT NULL,
       evaluation VARCHAR(255) NOT NULL,
       comment TEXT NOT NULL

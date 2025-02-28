@@ -30,16 +30,16 @@ async function getUser(email: string): Promise<User | undefined> {
 declare module 'next-auth' {
     interface Session {
         user: {
+            id: string;
             role: string;
         } & DefaultSession['user'];
     }
 
     interface JWT {
+        id: string;
         role: string;
     }
 }
-
-console.log('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET);
 
 export const { auth, signIn, signOut } = NextAuth({
     ...authConfig,
@@ -66,8 +66,6 @@ export const { auth, signIn, signOut } = NextAuth({
                     };
                 }
 
-                console.log('Invalid credentials');
-               
                 return null;
             },
         }),
@@ -77,21 +75,25 @@ export const { auth, signIn, signOut } = NextAuth({
     },
     callbacks: {
         async jwt({ token, user }) {
-            if (user && 'role' in user) {
-                token.role = user.role; 
+            if (user) {
+                token.id = user.id;
+                if ('role' in user) {
+                    token.role = user.role;
+                }
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
+                session.user.id = token.id as string;
                 session.user.role = token.role as string; 
             }
             return session;
-            
         },
     },
     pages: {
-        signIn: '/login',
+        signIn: "/login",
     },
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+
 });

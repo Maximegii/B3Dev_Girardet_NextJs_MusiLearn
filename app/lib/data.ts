@@ -28,3 +28,17 @@ export async function fetchTeacher() {
     throw new Error('Failed to fetch teacher data.');
   }
 }
+
+export async function fetchStudent() {
+  try {
+    const data = await sql<User[]>`
+    SELECT users.name, users.email, users.id
+    FROM users
+    WHERE users.role = 'student'
+    `;
+    return data;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch teacher data.');
+  }
+}
